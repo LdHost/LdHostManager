@@ -15,7 +15,7 @@ const Server = new ExpectProcessOutput(Cp.spawn(
 ));
 
 beforeAll(async () => {
-  const m = await Server.expectOut(/^(  backend:server Listening on port (\d+) \+\d+ms)\n/);
+  const m = await Server.expectErr(/^(  backend:server Listening on port (\d+) \+\d+ms)\n/);
   ServerPort = parseInt(m[2]);
 });
 
@@ -36,7 +36,7 @@ describe('LdHostManager', () => {
   });
 
   it('should see', async () => {
-    expect((await Server.expectOut(/more stuff\n/))[0]).toEqual('more stuff\n');
+    expect((await Server.expectErr(/more stuff\n/))[0]).toEqual('more stuff\n');
   });
 
   it('should end', async () => {
