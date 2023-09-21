@@ -4,19 +4,18 @@
 (base) PS1=16:54:56-eric@touchy:/tmp/toy/vue-js-client-crud$ curl -X POST -s http://localhost:3001/updateSubdomain -d type=github -d org=cotton -d repo=Cotton -d subdomain=cotton
 {"actions":["linked cotton to github/StaticFDP/Cotton"]}
 */
+const Cp = require('child_process');
 const {StdoutEater} = require('./StdoutEater');
 let ServerPort = null;
 let time = new Date();
-const Server = new StdoutEater();
+const Server = new StdoutEater(Cp.spawn(
+  './runLdHostManager-toy.js',
+  ['3002', './LdHost-test.config.json'],
+  {env: {'DEBUG': '*'}}
+));
 
 beforeAll(async () => {
-  await Server.init(
-    './runLdHostManager-toy.js',
-    ['3002', './LdHost-test.config.json'],
-    {env: {'DEBUG': '*'}}
-  );
-
-  const m = await Server.eat(/^(  backend:server Listening on port (\d+) \+\d+ms)\n/);
+  const m = await Server.expectOut(/^(  backend:server Listening on port (\d+) \+\d+ms)\n/);
   ServerPort = parseInt(m[2]);
 });
 
@@ -37,12 +36,12 @@ describe('LdHostManager', () => {
   });
 
   it('should see', async () => {
-    expect((await Server.eat(/more stuff\n/))[0]).toEqual('more stuff\n');
+    expect((await Server.expectOut(/more stuff\n/))[0]).toEqual('more stuff\n');
   });
 
   it('should end', async () => {
     Server.process.kill('SIGINT');
-    expect(await Server.done()).toEqual(2);
+    expect(await Server.isDone()).toEqual(2);
   });
 });
 
