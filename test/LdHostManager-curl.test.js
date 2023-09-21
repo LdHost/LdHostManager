@@ -5,10 +5,10 @@
 {"actions":["linked cotton to github/StaticFDP/Cotton"]}
 */
 const Cp = require('child_process');
-const {StdoutEater} = require('./StdoutEater');
+const {ExpectProcessOutput} = require('./ExpectProcessOutput');
 let ServerPort = null;
 let time = new Date();
-const Server = new StdoutEater(Cp.spawn(
+const Server = new ExpectProcessOutput(Cp.spawn(
   './runLdHostManager-toy.js',
   ['3002', './LdHost-test.config.json'],
   {env: {'DEBUG': '*'}}

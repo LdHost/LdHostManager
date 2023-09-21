@@ -20,29 +20,29 @@ class Expecter extends PromiseKeeper {
     super();
     this.pattern = pattern;
   }
-
-  isDone () { return this.promise; }
 }
 
 /**
  * Wrap a running ChildProcess to collect stdout.
  */
-class StdoutEater {
+class ExpectProcessOutput {
   /**
-   * build StdoutEater from running process
+   * build ExpectProcessOutput from running process
    * @param process ChildProcess already started with e.g. child_process.spawn
    */
   constructor (process) {
     // public:
     this.process = process;
-    this.process.stdout.on('data', this.handleStdout.bind(this));
-    this.process.stderr.on('data', this.handleStderr.bind(this));;
-    this.process.on('exit', this.handleExit.bind(this));
     this.stdout = '';
-    this.eaters = [];
+    this.expectQueue = [];
 
     // private:
     this._promiseKeeper = new PromiseKeeper();
+
+    // set up handlers
+    this.process.stdout.on('data', this.handleStdout.bind(this));
+    this.process.stderr.on('data', this.handleStderr.bind(this));;
+    this.process.on('exit', this.handleExit.bind(this));
   }
 
   // public API
@@ -70,7 +70,7 @@ class StdoutEater {
         expecter.accept = accept;
         expecter.reject = reject;
       });
-      this.eaters.push(expecter);
+      this.expectQueue.push(expecter);
       return expecter.promise;
     }
   }
@@ -78,15 +78,17 @@ class StdoutEater {
   accept (result) { this._promiseKeeper.accept(result); }
   reject (result) { this._promiseKeeper.reject(result); }
 
+  // extension API - handlers for stdout, stderr and exit
+
   handleStdout (data) {
     this.stdout += data.toString();
-    // for (let iEater in this.eaters) ... works but is it specified?
-    for (let iEater = 0; iEater < this.eaters.length; ++iEater) {
-      const expecter = this.eaters[iEater];
+    // for (let iExp in this.expectQueue) ... works but is it specified?
+    for (let iExp = 0; iExp < this.expectQueue.length; ++iExp) {
+      const expecter = this.expectQueue[iExp];
       const m = this.stdout.match(expecter.pattern);
       if (m) {
         this.stdout = this.stdout.substring(m.index + m[0].length)
-        this.eaters.splice(iEater--, 1);
+        this.expectQueue.splice(iExp--, 1);
         expecter.accept(m);
       }
     }
@@ -101,7 +103,6 @@ class StdoutEater {
       this.reject(this.stdout);
     this.accept(code);
   }
-
 }
 
-module.exports = {StdoutEater}
+module.exports = {ExpectProcessOutput}
