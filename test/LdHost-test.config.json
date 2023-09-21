@@ -1,0 +1,6 @@
+{
+  "domain": "fdpcloud.org",
+  "root": "/home/eric/checkouts/StaticFDP/FdpManager/backend/test/root/",
+  "repoDir": "home/fdpCloud/sites/",
+  "subdomainDir": "etc/apache2/sites-available/subdomains.d"
+}

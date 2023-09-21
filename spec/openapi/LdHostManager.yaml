@@ -1,0 +1,159 @@
+openapi: 3.0.0
+info:
+  version: 0.0.1
+  title: LdHostManager
+  description: |
+    Manage a Linked Data Git Host.
+
+    ### Features:
+
+    * query sites
+    * add a site
+    * add a subdomain for a site
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: https://ldpCloud/MANAGE
+
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+security:
+  - BasicAuth: []
+
+paths:
+  /:
+    get:
+      description: returns heartbeat
+      responses:
+        '200':
+          description: proved server is running
+          content:
+            application/json:
+              schema:
+                type: boolean
+  /sites:
+    get:
+      description: list of sites and subdomains
+      responses:
+        '200':
+          description: subdomains and sites
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - subdomains
+                  - sites
+                properties:
+                  subdomains:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - ServerName
+                        - DocumentRoot
+                      properties:
+                        ServerName:
+                          type: string
+                        DocumentRoot:
+                          type: string
+                  sites:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - type
+                        - org
+                        - repo
+                        - sitePath
+                      properties:
+                        type:
+                          type: string
+                        org:
+                          type: string
+                        repo:
+                          type: string
+                        sitePath:
+                          type: string
+                        dateTime:
+                          type: string
+                        who:
+                          type: string
+                        has:
+                          type: string                          
+  /createSite:
+    post:
+      description: clone a git repo onto the LD host server
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - type
+                - org
+                - repo
+              properties:
+                type:
+                  type: string
+                org:
+                  type: string
+                repo:
+                  type: string
+      responses:
+        '200':
+          description: subdomains and sites
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - actions
+                properties:
+                  actions:
+                    type: array
+                    items:
+                      type: string
+  /updateSubdomain:
+    post:
+      description: create a subdomain for a cloned server
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - type
+                - org
+                - repo
+                - subdomain
+              properties:
+                type:
+                  type: string
+                org:
+                  type: string
+                repo:
+                  type: string
+                subdomain:
+                  type: string
+      responses:
+        '200':
+          description: subdomains and sites
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - actions
+                properties:
+                  actions:
+                    type: array
+                    items:
+                      type: string
