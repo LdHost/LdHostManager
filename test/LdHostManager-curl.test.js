@@ -42,7 +42,7 @@ describe('LdHostManager', () => {
 
   it('should end', async () => {
     Server.process.kill('SIGINT');
-    expect(await Server.promise).toEqual(2);
+    expect(await Server.done()).toEqual(2);
   });
 });
 

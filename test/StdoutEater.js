@@ -5,26 +5,39 @@
 
 const Cp = require('child_process');
 
-class StdoutEater {
+class PromiseKeeper {
   constructor () {
-    this.process = null;
-    this.promise = null;
-    this.accept = null;
-    this.reject = null;
-    this.stdout = '';
-    this.eaters = [];
-  }
-
-  async init (script, args, env) {
     this.promise = new Promise((accept, reject) => {
       this.accept = accept;
       this.reject = reject;
     });
+  }
+
+  done () { return this.promise; }
+}
+
+class StdoutEater {
+  constructor () {
+    // public:
+    this.process = null;
+    this.stdout = '';
+    this.eaters = [];
+
+    // private:
+    this._promiseKeeper = null;
+  }
+
+  async init (script, args, env) {
+    this._promiseKeeper = new PromiseKeeper();
     this.process = Cp.spawn(script, args, env);
     this.process.stdout.on('data', this.handleStdout.bind(this));
     this.process.stderr.on('data', this.handleStderr.bind(this));;
     this.process.on('exit', this.handleExit.bind(this));
   }
+
+  done () { return this._promiseKeeper.done(); }
+  accept (result) { this._promiseKeeper.accept(result); }
+  reject (result) { this._promiseKeeper.reject(result); }
 
   handleStdout (data) {
     this.stdout += data.toString();
