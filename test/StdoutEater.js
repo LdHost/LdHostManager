@@ -1,22 +1,32 @@
+/**
+ * test a process's stdout. handy for servers.
+ * Taken from shex.js
+ */
+
 const Cp = require('child_process');
+
 class StdoutEater {
   constructor () {
     this.process = null;
     this.promise = null;
+    this.accept = null;
+    this.reject = null;
     this.stdout = '';
     this.eaters = [];
   }
 
   async init (script, args, env) {
     this.promise = new Promise((accept, reject) => {
-      this.process = Cp.spawn(script, args, env);
-      this.process.stdout.on('data', this.handleStdout.bind(this, accept, reject));
-      this.process.stderr.on('data', this.handleStderr.bind(this, accept, reject));;
-      this.process.on('exit', this.handleExit.bind(this, accept, reject));
+      this.accept = accept;
+      this.reject = reject;
     });
+    this.process = Cp.spawn(script, args, env);
+    this.process.stdout.on('data', this.handleStdout.bind(this));
+    this.process.stderr.on('data', this.handleStderr.bind(this));;
+    this.process.on('exit', this.handleExit.bind(this));
   }
 
-  handleStdout (accept, reject, data) {
+  handleStdout (data) {
     this.stdout += data.toString();
     // for (let iEater in this.eaters) ... works but is it specified?
     for (let iEater = 0; iEater < this.eaters.length; ++iEater) {
@@ -30,14 +40,14 @@ class StdoutEater {
     }
   }
 
-  handleStderr (accept, reject, data) {
-    reject(data.toString());
+  handleStderr (data) {
+    this.reject(data.toString());
   }
 
-  handleExit (accept, reject, code) {
+  handleExit (code) {
     if (this.stdout.length)
-      reject(this.stdout);
-    accept(code);
+      this.reject(this.stdout);
+    this.accept(code);
   }
 
   eat (pattern) {
