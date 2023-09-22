@@ -1,7 +1,7 @@
 /*
-(base) PS1=17:36:41-eric@touchy:/tmp/toy/vue-js-client-crud$ curl -X POST -s http://localhost:3001/createSite -d type=github -d org=StaticFDP -d repo=Cotton
+(base) PS1=17:36:41-eric@touchy:/tmp/toy/vue-js-client-crud$ curl -X POST -s http://localhost:3001/createSite -d type=github -d owner=StaticFDP -d repo=Cotton
 {"actions":["cloned http://github.com/StaticFDP/Cotton to github/StaticFDP/Cotton"]}
-(base) PS1=16:54:56-eric@touchy:/tmp/toy/vue-js-client-crud$ curl -X POST -s http://localhost:3001/updateSubdomain -d type=github -d org=cotton -d repo=Cotton -d subdomain=cotton
+(base) PS1=16:54:56-eric@touchy:/tmp/toy/vue-js-client-crud$ curl -X POST -s http://localhost:3001/updateSubdomain -d type=github -d owner=cotton -d repo=Cotton -d subdomain=cotton
 {"actions":["linked cotton to github/StaticFDP/Cotton"]}
 */
 const Fs = require('fs');
@@ -59,14 +59,14 @@ describe('LdHostManager', () => {
       [
         { "dateTime": "2023-09-15T15:24:22.000Z",
           "hash": "3285971ea73195c7940519c55652530392c651bb",
-          "org": "StaticFDP",
+          "owner": "StaticFDP",
           "repo": "FlashCard1",
           "sitePath": "github/StaticFDP/FlashCard1",
           "type": "github",
           "who": "GitHub" },
         { "dateTime": "2023-09-15T08:09:50.000Z",
           "hash": "882a283c7baf83030f2ab697a4edf1eb5db6420b",
-          "org": "StaticFDP",
+          "owner": "StaticFDP",
           "repo": "wikidata",
           "sitePath": repoPath,
           "subdomain": "wikidata",
@@ -156,19 +156,19 @@ async function fetchPost (url, args) {
   if (!resp.ok)
     throw Error(text);
   return {status, text};
-  // return oldCurl(args.type, args.org, args.repo);
+  // return oldCurl(args.type, args.owner, args.repo);
 }
 
-async function createSite (type, org, repo) {
-  // const {status, text} = await oldCurl(type, org, repo);
+async function createSite (type, owner, repo) {
+  // const {status, text} = await oldCurl(type, owner, repo);
   const {status, text} = await fetchPost(
     `http://localhost:${ServerPort}/createSite`,
-    {type, org, repo}
+    {type, owner, repo}
   );
-  const created = Path.join(type, org, repo);
+  const created = Path.join(type, owner, repo);
   expect(JSON.parse(text)).toEqual(
     {"actions":[
-      `cloned http://${type}.com/${org}/${repo} to ${created}`
+      `cloned http://${type}.com/${owner}/${repo} to ${created}`
     ]}
   );
   expect(status).toEqual(200);
@@ -182,12 +182,12 @@ async function createSite (type, org, repo) {
   await Fs.promises.rm(Path.join(Config.root, Config.repoDir, created), { recursive: true });
 }
 
-async function updateSubdomain (type, org, repo, subdomain) {
+async function updateSubdomain (type, owner, repo, subdomain) {
   const {status, text} = await fetchPost(
     `http://localhost:${ServerPort}/updateSubdomain`,
-    { type, org, repo, subdomain, }
+    { type, owner, repo, subdomain, }
   );
-  const created = Path.join(type, org, repo);
+  const created = Path.join(type, owner, repo);
   expect(JSON.parse(text)).toEqual(
     {"actions":[
       `linked cotton to ${created}`
@@ -204,14 +204,14 @@ async function updateSubdomain (type, org, repo, subdomain) {
   await Fs.promises.rm(Path.join(Config.root, Config.subdomainDir, subdomain), { recursive: true });
 }
 
-async function oldCurl (type, org, repo) {
+async function oldCurl (type, owner, repo) {
   const curl = Cp.spawnSync(
     'curl',
     [
       "-X", "POST",
       "-s", `http://localhost:${ServerPort}/createSite`,
       "-d", `type=${type}`,
-      "-d", `org=${org}`,
+      "-d", `owner=${owner}`,
       "-d", `repo=${repo}`
     ]
   );

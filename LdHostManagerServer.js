@@ -87,18 +87,18 @@ class LdHostManagementServer {
 
         case '/createSite':
           {
-            const {type, org, repo} = this.expectAll(searchParams, 'type', 'org', 'repo');
+            const {type, owner, repo} = this.expectAll(searchParams, 'type', 'owner', 'repo');
             payload = {
-              actions: await createSite(debug, this.root, type, org, repo, this.repoDir)
+              actions: await createSite(debug, this.root, type, owner, repo, this.repoDir)
             };
           }
           break;
 
         case '/updateSubdomain':
           {
-            const {type, org, repo, subdomain} = this.expectAll(searchParams, 'type', 'org', 'repo', 'subdomain');
+            const {type, owner, repo, subdomain} = this.expectAll(searchParams, 'type', 'owner', 'repo', 'subdomain');
             payload = {
-              actions: await updateSubdomain(debug, this.root, type, org, repo, subdomain, this.repoDir, this.subdomainDir)
+              actions: await updateSubdomain(debug, this.root, type, owner, repo, subdomain, this.repoDir, this.subdomainDir)
             };
           }
           break;

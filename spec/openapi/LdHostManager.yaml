@@ -68,13 +68,13 @@ paths:
                       type: object
                       required:
                         - type
-                        - org
+                        - owner
                         - repo
                         - sitePath
                       properties:
                         type:
                           type: string
-                        org:
+                        owner:
                           type: string
                         repo:
                           type: string
@@ -97,12 +97,12 @@ paths:
               type: object
               required:
                 - type
-                - org
+                - owner
                 - repo
               properties:
                 type:
                   type: string
-                org:
+                owner:
                   type: string
                 repo:
                   type: string
@@ -131,13 +131,13 @@ paths:
               type: object
               required:
                 - type
-                - org
+                - owner
                 - repo
                 - subdomain
               properties:
                 type:
                   type: string
-                org:
+                owner:
                   type: string
                 repo:
                   type: string

@@ -25,17 +25,17 @@ async function getSiteData (root, repoDir, subdomains) {
   const sites = []
   for (const type of Fs.readdirSync(Path.join(root, repoDir), { withFileTypes: true })) {
     const typeDir = Path.join(root, repoDir, type.name);
-    for (const org of Fs.readdirSync(typeDir, { withFileTypes: true })) {
-      const orgDir = Path.join(typeDir, org.name);
+    for (const owner of Fs.readdirSync(typeDir, { withFileTypes: true })) {
+      const orgDir = Path.join(typeDir, owner.name);
       for (const repo of Fs.readdirSync(orgDir, { withFileTypes: true })) {
         const repoDir = Path.join(orgDir, repo.name);
-        const sitePath = type.name + '/' + org.name + '/' + repo.name;
+        const sitePath = type.name + '/' + owner.name + '/' + repo.name;
         const subdomain = sitePathToSubdomain[sitePath];
         const repository = await NodeGit.Repository.open(repoDir);
         const head = await repository.getHeadCommit( );
         sites.push({
           type: type.name,
-          org: org.name,
+          owner: owner.name,
           repo: repo.name,
           sitePath,
           subdomain,
@@ -49,8 +49,8 @@ async function getSiteData (root, repoDir, subdomains) {
   return sites;
 }
 
-async function updateSubdomain (debug, root, type, org, repo, subdomain, repoDir, subdomainDir) {
-  const sitePath = Path.join(type, org, repo);
+async function updateSubdomain (debug, root, type, owner, repo, subdomain, repoDir, subdomainDir) {
+  const sitePath = Path.join(type, owner, repo);
   const absSiteDir = `${root}${repoDir}${sitePath}`;
   debug(`creating subdomain linking ${subdomain} to ${absSiteDir}`);
   await Fs.promises.stat(Path.join(root, subdomainDir)); // possibly throw ENOENT to caller
@@ -79,7 +79,7 @@ ${vhostContents}
   return [`linked ${subdomain} to ${sitePath}`];
 }
 
-async function ensureRepoDir (debug, siteDir, type, org, repo) {
+async function ensureRepoDir (debug, siteDir, type, owner, repo) {
   let d = siteDir;
   await Fs.promises.stat(d); // possibly throw ENOENT to caller
 
@@ -91,7 +91,7 @@ async function ensureRepoDir (debug, siteDir, type, org, repo) {
       throw e;
   }
 
-  d = Path.join(d, org);;
+  d = Path.join(d, owner);;
   try {
     await Fs.promises.mkdir(d);
   } catch (e) {
@@ -108,11 +108,11 @@ async function ensureRepoDir (debug, siteDir, type, org, repo) {
 /**
  * early returns for errors
  */
-async function createSite (debug, root, type, org, repo, repoDir) {
+async function createSite (debug, root, type, owner, repo, repoDir) {
   const sitePath = root + repoDir;
   const args = [
     {name: 'type', value: type},
-    {name: 'org', value: org},
+    {name: 'owner', value: owner},
     {name: 'repo', value: repo},
   ];
   args.forEach(arg => {
@@ -122,7 +122,7 @@ async function createSite (debug, root, type, org, repo, repoDir) {
   let repoData = null;
   switch (type) {
   case 'github':
-    repoUrl = `http://github.com/${org}/${repo}`;
+    repoUrl = `http://github.com/${owner}/${repo}`;
     // repoData = await getGithubRepo(repoUrl);
     // debug('remote: ' + JSON.stringify(repoData));
     break;
@@ -130,7 +130,7 @@ async function createSite (debug, root, type, org, repo, repoDir) {
     throw Error(`unknown repo type: ${type}`);
   }
 
-  const absSiteDir = await ensureRepoDir(debug, `${root}${repoDir}`, type, org, repo);
+  const absSiteDir = await ensureRepoDir(debug, `${root}${repoDir}`, type, owner, repo);
   debug(`cloning ${repoUrl} to: ${absSiteDir}`);
   if (false) {
     // Cloning over API requires auth token for no reason I can think of.
@@ -141,7 +141,7 @@ async function createSite (debug, root, type, org, repo, repoDir) {
     Cp.execSync(`git clone ${repoUrl} ${absSiteDir}`);
   }
   debug(`cloned ${repoUrl} to ${absSiteDir}`);
-  return [`cloned ${repoUrl} to ${Path.join(type, org, repo)}`];
+  return [`cloned ${repoUrl} to ${Path.join(type, owner, repo)}`];
 }
 
 module.exports = {getSiteData, updateSubdomain, createSite};
