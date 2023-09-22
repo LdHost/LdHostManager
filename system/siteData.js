@@ -74,8 +74,35 @@ ${vhostContents}
   include ./sites-available/fdpcloud-ssl
 </VirtualHost>
 `;
-  await Fs.promises.writeFile(subdomainFilePath, vhostText, { flag: 'wx' });// possibly throw EEXIST to caller  
-  return ['linked ' + subdomain + ' to ' + `${sitePath}`];
+  await Fs.promises.writeFile(subdomainFilePath, vhostText, { flag: 'wx' });// possibly throw EEXIST to caller
+  debug(`linked ${subdomainFilePath} to ${absSiteDir}`);
+  return [`linked ${subdomain} to ${sitePath}`];
+}
+
+async function ensureRepoDir (debug, siteDir, type, org, repo) {
+  let d = siteDir;
+  await Fs.promises.stat(d); // possibly throw ENOENT to caller
+
+  d = Path.join(d, type);
+  try {
+    await Fs.promises.mkdir(d);
+  } catch (e) {
+    if (e.code !== 'EEXIST')
+      throw e;
+  }
+
+  d = Path.join(d, org);;
+  try {
+    await Fs.promises.mkdir(d);
+  } catch (e) {
+    if (e.code !== 'EEXIST')
+      throw e;
+  }
+
+  d = Path.join(d, repo);;
+  await Fs.promises.mkdir(d); // send this error right up to the caller
+
+  return d;
 }
 
 /**
@@ -114,37 +141,7 @@ async function createSite (debug, root, type, org, repo, repoDir) {
     Cp.execSync(`git clone ${repoUrl} ${absSiteDir}`);
   }
   debug(`cloned ${repoUrl} to ${absSiteDir}`);
-  return [`cloned ${repoUrl} to ${type}/${org}/${repo}`];
-  // if (subdomain) {
-  //   updateSubdomain (debug, subdomain, absSiteDir, subdomainDir);
-  // }
+  return [`cloned ${repoUrl} to ${Path.join(type, org, repo)}`];
 }
-
-async function ensureRepoDir (debug, siteDir, type, org, repo) {
-  let d = siteDir;
-  await Fs.promises.stat(d); // possibly throw ENOENT to caller
-
-  d = Path.join(d, type);
-  try {
-    await Fs.promises.mkdir(d);
-  } catch (e) {
-    if (e.code !== 'EEXIST')
-      throw e;
-  }
-
-  d = Path.join(d, org);;
-  try {
-    await Fs.promises.mkdir(d);
-  } catch (e) {
-    if (e.code !== 'EEXIST')
-      throw e;
-  }
-
-  d = Path.join(d, repo);;
-  await Fs.promises.mkdir(d); // send this error right up to the caller
-
-  return d;
-}
-
 
 module.exports = {getSiteData, updateSubdomain, createSite};

@@ -50,9 +50,10 @@ describe('LdHostManager', () => {
       { encoding : 'utf8' }
     );
     const res = JSON.parse(curl.stdout);
+    const repoPath = 'github/StaticFDP/wikidata';
     expect(res.subdomains).toEqual( [ {
-        "DocumentRoot": "/home/fdpCloud/sites/github/StaticFDP/wikidata",
-        "ServerName": "wikidata.fdpcloud.org",
+      "DocumentRoot": '/' + Path.join(Config.repoDir, repoPath),
+      "ServerName": `wikidata.${Config.domain}`,
     } ] );
     expect(res.sites.sort((l, r) => l.repo.localeCompare(r))).toEqual(
       [
@@ -67,7 +68,7 @@ describe('LdHostManager', () => {
           "hash": "882a283c7baf83030f2ab697a4edf1eb5db6420b",
           "org": "StaticFDP",
           "repo": "wikidata",
-          "sitePath": "github/StaticFDP/wikidata",
+          "sitePath": repoPath,
           "subdomain": "wikidata",
           "type": "github",
           "who": "Eric Prud'hommeaux" }
@@ -75,11 +76,15 @@ describe('LdHostManager', () => {
     expect(curl.stderr).toEqual("");
     expect(curl.status).toEqual(0);
     const serverLog = (await Server.expectOut(/^(.*wikidata.*)$/s))[0];
-    expect(serverLog).toEqual("{ 'github/StaticFDP/wikidata': 'wikidata' }\n");
+    expect(serverLog).toEqual(`{ '${repoPath}': 'wikidata' }\n`);
   });
 
   it('should call createSite', async () => {
     await createSite("github", "StaticFDP", "Cotton");
+  });
+
+  it('should call updateSubdomain', async () => {
+    await updateSubdomain("github", "StaticFDP", "Cotton", "cotton");
   });
 
   it('should end', async () => {
@@ -134,8 +139,7 @@ async function curlFetch (url, opts) {
   );
 }
 
-async function fetchPost (args) {
-  const url = `http://localhost:${ServerPort}/createSite`;
+async function fetchPost (url, args) {
   const method = 'POST';
   const headers = new Headers([
     ['Content-Type', 'application/x-www-form-urlencoded'],
@@ -157,11 +161,10 @@ async function fetchPost (args) {
 
 async function createSite (type, org, repo) {
   // const {status, text} = await oldCurl(type, org, repo);
-  const {status, text} = await fetchPost({
-    type: type,
-    org: org,
-    repo: repo,
-  });
+  const {status, text} = await fetchPost(
+    `http://localhost:${ServerPort}/createSite`,
+    {type, org, repo}
+  );
   const created = Path.join(type, org, repo);
   expect(JSON.parse(text)).toEqual(
     {"actions":[
@@ -176,7 +179,29 @@ async function createSite (type, org, repo) {
     console.log(process.cwd());
     console.log(rm.stdout.toString().length);
   */
-  await Fs.promises.rm(Path.join("test/root/home/fdpCloud/sites", created), { recursive: true });
+  await Fs.promises.rm(Path.join(Config.root, Config.repoDir, created), { recursive: true });
+}
+
+async function updateSubdomain (type, org, repo, subdomain) {
+  const {status, text} = await fetchPost(
+    `http://localhost:${ServerPort}/updateSubdomain`,
+    { type, org, repo, subdomain, }
+  );
+  const created = Path.join(type, org, repo);
+  expect(JSON.parse(text)).toEqual(
+    {"actions":[
+      `linked cotton to ${created}`
+    ]}
+  );
+  expect(status).toEqual(200);
+  // should log that it was cloned
+  expect((await Server.expectErr(/(linked [^ ]+ to [^ ]+\n)/))[0]).toMatch(/linked [^ ]+ to [^ ]+\n/);
+  /*
+    const rm = Cp.spawnSync('rm', ["-rf", created]);
+    console.log(process.cwd());
+    console.log(rm.stdout.toString().length);
+  */
+  await Fs.promises.rm(Path.join(Config.root, Config.subdomainDir, subdomain), { recursive: true });
 }
 
 async function oldCurl (type, org, repo) {
@@ -195,4 +220,3 @@ async function oldCurl (type, org, repo) {
     throw Error(errOut);
   return {status: curl.status === 0 ? 200 : 500, text: curl.stdout};
 }
-
