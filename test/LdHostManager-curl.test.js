@@ -77,26 +77,34 @@ describe('LdHostManager', () => {
   });
 
   it('should call createSite', async () => {
+    const type = "github";
+    const org = "StaticFDP";
+    const repo = "Cotton";
+    const created = Path.join(type, org, repo);
     const curl = Cp.spawnSync(
       'curl',
       [
         "-X", "POST",
         "-s", `http://localhost:${ServerPort}/createSite`,
-        "-d", "type=github",
-        "-d", "org=StaticFDP",
-        "-d", "repo=Cotton"
+        "-d", `type=${type}`,
+        "-d", `org=${org}`,
+        "-d", `repo=${repo}`
       ]
     );
     expect(JSON.parse(curl.stdout)).toEqual(
       {"actions":[
-        "cloned http://github.com/StaticFDP/Cotton to github/StaticFDP/Cotton"
+        `cloned http://${type}.com/${org}/${repo} to ${created}`
       ]}
     );
     expect(curl.stderr.toString()).toEqual('');
     expect(curl.status).toEqual(0);
     expect((await Server.expectErr(/(cloned [^ ]+ to [^ ]+\n)/))[0]).toMatch(/cloned [^ ]+ to [^ ]+\n/);
-    const repo = Path.join(__dirname, "root/home/fdpCloud/sites/github/StaticFDP/Cotton");
-    console.log(await Fs.promises.unlink(repo));
+    /*
+    const rm = Cp.spawnSync('rm', ["-rf", created]);
+    console.log(process.cwd());
+    console.log(rm.stdout.toString().length);
+    */
+    await Fs.promises.rm(Path.join("test/root/home/fdpCloud/sites", created), { recursive: true });
   });
 
   it('should end', async () => {
