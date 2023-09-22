@@ -1,0 +1,11 @@
+SSLEngine on
+SSLCertificateFile    /etc/letsencrypt/live/fdpcloud.org/fullchain.pem
+SSLCertificateKeyFile /etc/letsencrypt/live/fdpcloud.org/privkey.pem
+# SSLCertificateChainFile /etc/apache2/ssl.crt/server-ca.crt
+# SSLCACertificatePath /etc/ssl/certs/
+# SSLCACertificateFile /etc/apache2/ssl.crt/ca-bundle.crt
+# SSLCARevocationPath /etc/apache2/ssl.crl/
+# SSLCARevocationFile /etc/apache2/ssl.crl/ca-bundle.crl
+# SSLVerifyClient require
+# SSLVerifyDepth  10
+# SSLOptions +FakeBasicAuth +ExportCertData +StrictRequire

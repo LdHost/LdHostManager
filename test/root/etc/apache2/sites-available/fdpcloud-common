@@ -1,0 +1,8 @@
+ErrorLog ${APACHE_LOG_DIR}/error.log
+CustomLog ${APACHE_LOG_DIR}/access.log combined
+ServerAdmin webmaster@localhost
+
+<FilesMatch "\.(rdf|ttl|nt|html)$">
+  Require all granted
+</FilesMatch>
+DirectoryIndex index.ttl index.nt index.rdf  index.html	

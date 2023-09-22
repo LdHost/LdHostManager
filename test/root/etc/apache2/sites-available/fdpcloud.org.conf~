@@ -1,0 +1,49 @@
+# leave fdpcloud.org at top to provide default for unrecognized subdomains
+<VirtualHost *:80>
+  ServerName fdpcloud.org
+  DocumentRoot /var/www/fdpCloud
+  include ./sites-available/fdpcloud-common
+
+  Alias /sites /home/fdpCloud/sites
+  <Directory /home/fdpCloud/sites>
+    include ./sites-available/fdpcloud-dirConfig
+  </Directory>
+</VirtualHost>
+
+<VirtualHost *:80>
+  ServerName wikidata.fdpcloud.org
+  DocumentRoot /home/fdpCloud/sites/github/StaticFDP/wikidata
+  <Directory /home/fdpCloud/sites/github/StaticFDP/wikidata>
+    include ./sites-available/fdpcloud-dirConfig
+  </Directory>
+  include ./sites-available/fdpcloud-common
+</VirtualHost>
+
+<IfModule mod_ssl.c>
+  # leave fdpcloud.org at top to provide default for unrecognized subdomains
+  <VirtualHost *:443>
+    ServerName fdpcloud.org
+    DocumentRoot /var/www/fdpCloud
+    include ./sites-available/fdpcloud-ssl
+    include ./sites-available/fdpcloud-common
+    ProxyPass        /HOOKS/ http://127.0.0.1:9000/hooks/
+    ProxyPassReverse /HOOKS/ http://127.0.0.1:9000/hooks/
+
+    Alias /sites /home/fdpCloud/sites
+    <Directory /home/fdpCloud/sites>
+      include ./sites-available/fdpcloud-dirConfig
+    </Directory>
+  </VirtualHost>
+
+  <VirtualHost *:443>
+    ServerName wikidata.fdpcloud.org
+    DocumentRoot /home/fdpCloud/sites/github/StaticFDP/wikidata
+    <Directory /home/fdpCloud/sites/github/StaticFDP/wikidata>
+      include ./sites-available/fdpcloud-dirConfig
+    </Directory>
+    include ./sites-available/fdpcloud-ssl
+    include ./sites-available/fdpcloud-common
+  </VirtualHost>
+</IfModule>
+
+# vim: syntax=apache ts=4 sw=4 sts=4 sr noet

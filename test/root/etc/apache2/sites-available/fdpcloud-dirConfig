@@ -1,0 +1,4 @@
+Options Indexes FollowSymLinks MultiViews
+DirectoryIndex Overview index
+AllowOverride All
+Require all granted
