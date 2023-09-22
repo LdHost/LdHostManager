@@ -1,6 +1,6 @@
 {
   "domain": "fdpcloud.org",
-  "root": "/home/eric/checkouts/LdHost/LdHostManager/test/root/",
+  "root": "test/root/",
   "repoDir": "home/fdpCloud/sites/",
   "subdomainDir": "etc/apache2/sites-available/subdomains.d"
 }

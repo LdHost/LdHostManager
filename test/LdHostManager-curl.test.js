@@ -11,9 +11,11 @@ const debug = require('debug')('test:LdHostManager-curl');
 const {ExpectProcessOutput} = require('./ExpectProcessOutput');
 let ServerPort = null;
 let time = new Date();
+const ConfigPath = './test/LdHost-test.config.json';
+const Config = JSON.parse(Fs.readFileSync(ConfigPath));
 const Server = new ExpectProcessOutput(Cp.spawn(
   './runLdHostManager.js',
-  ['3002', './test/LdHost-test.config.json'],
+  ['3002', ConfigPath],
   {env: {'DEBUG': '*', 'PATH': process.env.PATH}}
 ), debug);
 
@@ -77,34 +79,7 @@ describe('LdHostManager', () => {
   });
 
   it('should call createSite', async () => {
-    const type = "github";
-    const org = "StaticFDP";
-    const repo = "Cotton";
-    const created = Path.join(type, org, repo);
-    const curl = Cp.spawnSync(
-      'curl',
-      [
-        "-X", "POST",
-        "-s", `http://localhost:${ServerPort}/createSite`,
-        "-d", `type=${type}`,
-        "-d", `org=${org}`,
-        "-d", `repo=${repo}`
-      ]
-    );
-    expect(JSON.parse(curl.stdout)).toEqual(
-      {"actions":[
-        `cloned http://${type}.com/${org}/${repo} to ${created}`
-      ]}
-    );
-    expect(curl.stderr.toString()).toEqual('');
-    expect(curl.status).toEqual(0);
-    expect((await Server.expectErr(/(cloned [^ ]+ to [^ ]+\n)/))[0]).toMatch(/cloned [^ ]+ to [^ ]+\n/);
-    /*
-    const rm = Cp.spawnSync('rm', ["-rf", created]);
-    console.log(process.cwd());
-    console.log(rm.stdout.toString().length);
-    */
-    await Fs.promises.rm(Path.join("test/root/home/fdpCloud/sites", created), { recursive: true });
+    await createSite("github", "StaticFDP", "Cotton");
   });
 
   it('should end', async () => {
@@ -113,3 +88,31 @@ describe('LdHostManager', () => {
   });
 });
 
+async function createSite(type, org, repo) {
+  const created = Path.join(type, org, repo);
+  const curl = Cp.spawnSync(
+    'curl',
+    [
+      "-X", "POST",
+      "-s", `http://localhost:${ServerPort}/createSite`,
+      "-d", `type=${type}`,
+      "-d", `org=${org}`,
+      "-d", `repo=${repo}`
+    ]
+  );
+  expect(JSON.parse(curl.stdout)).toEqual(
+    {"actions":[
+      `cloned http://${type}.com/${org}/${repo} to ${created}`
+    ]}
+  );
+  expect(curl.stderr.toString()).toEqual('');
+  expect(curl.status).toEqual(0);
+  // should log that it was cloned
+  expect((await Server.expectErr(/(cloned [^ ]+ to [^ ]+\n)/))[0]).toMatch(/cloned [^ ]+ to [^ ]+\n/);
+  /*
+    const rm = Cp.spawnSync('rm', ["-rf", created]);
+    console.log(process.cwd());
+    console.log(rm.stdout.toString().length);
+  */
+  await Fs.promises.rm(Path.join("test/root/home/fdpCloud/sites", created), { recursive: true });
+}
