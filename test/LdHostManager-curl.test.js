@@ -88,8 +88,98 @@ describe('LdHostManager', () => {
   });
 });
 
-async function createSite(type, org, repo) {
+async function curlFetch (url, opts) {
+  const method = opts.method || 'GET';
+  const args =     [
+    "-X", method,
+    "-s", url,
+    "-i",
+    // "--trace-ascii", "/tmp/toy/curlout.log",
+  ];
+  if (opts.headers)
+    Array.prototype.push.apply(args, [...new Headers(opts.headers)].map(
+      ([key, value]) => ['-H', `${key}=${value}`]
+    ).flat())
+
+  if (opts.body) {
+    args.push('--data-raw');
+    args.push(opts.body);
+  }
+
+  const curl = Cp.spawnSync('curl', args);
+  if (curl.stderr.length > 0) {
+    throw Error(curl.stderr.toString());
+  }
+  // parse stdout
+  const stdout = curl.stdout.toString();
+  const iBody = stdout.indexOf('\r\n\r\n');
+  const headerLines = stdout.substring(0, iBody).split("\r\n");
+  const statusLine = headerLines.shift();
+  const mStatus = statusLine.match(/ (\d+)(?: (.*))?/);
+  const lz = headerLines.map(h => {
+    const iColon = h.indexOf(':');
+    const attr = h.substring(0, iColon);
+    const value = h.substring(iColon+2);
+    return [attr, value];
+  });
+  const headers = new Headers(lz);
+  const status = parseInt(mStatus[1]);
+  const ok = ['2', '3'].indexOf(mStatus[1][0]) !== -1;
+  const statusText = mStatus[2]
+  const body = stdout.substring(iBody+2)
+  const text = () => Promise.resolve(body);
+  const json = () => Promise.resolve(JSON.parse(body));
+  return Promise.resolve(
+    { ok, status, statusText, text, json }
+  );
+}
+
+async function fetchPost (args) {
+  const url = `http://localhost:${ServerPort}/createSite`;
+  const method = 'POST';
+  const headers = new Headers([
+    ['Content-Type', 'application/x-www-form-urlencoded'],
+    ['accept', 'application/json'],
+  ]);
+  const body = new URLSearchParams(args);
+  /* using curlFetch to bypass this warning:
+   *   (node:944752) ExperimentalWarning: The Fetch API is an experimental feature. This feature could change at any time
+   *   (Use `node --trace-warnings ...` to show where the warning was created)
+   */
+  const resp = await curlFetch(url, { method, headers, body }); // or curlFetch
+  const status = resp.status;
+  const text = await resp.text();
+  if (!resp.ok)
+    throw Error(text);
+  return {status, text};
+  // return oldCurl(args.type, args.org, args.repo);
+}
+
+async function createSite (type, org, repo) {
+  // const {status, text} = await oldCurl(type, org, repo);
+  const {status, text} = await fetchPost({
+    type: type,
+    org: org,
+    repo: repo,
+  });
   const created = Path.join(type, org, repo);
+  expect(JSON.parse(text)).toEqual(
+    {"actions":[
+      `cloned http://${type}.com/${org}/${repo} to ${created}`
+    ]}
+  );
+  expect(status).toEqual(200);
+  // should log that it was cloned
+  expect((await Server.expectErr(/(cloned [^ ]+ to [^ ]+\n)/))[0]).toMatch(/cloned [^ ]+ to [^ ]+\n/);
+  /*
+    const rm = Cp.spawnSync('rm', ["-rf", created]);
+    console.log(process.cwd());
+    console.log(rm.stdout.toString().length);
+  */
+  await Fs.promises.rm(Path.join("test/root/home/fdpCloud/sites", created), { recursive: true });
+}
+
+async function oldCurl (type, org, repo) {
   const curl = Cp.spawnSync(
     'curl',
     [
@@ -100,19 +190,9 @@ async function createSite(type, org, repo) {
       "-d", `repo=${repo}`
     ]
   );
-  expect(JSON.parse(curl.stdout)).toEqual(
-    {"actions":[
-      `cloned http://${type}.com/${org}/${repo} to ${created}`
-    ]}
-  );
-  expect(curl.stderr.toString()).toEqual('');
-  expect(curl.status).toEqual(0);
-  // should log that it was cloned
-  expect((await Server.expectErr(/(cloned [^ ]+ to [^ ]+\n)/))[0]).toMatch(/cloned [^ ]+ to [^ ]+\n/);
-  /*
-    const rm = Cp.spawnSync('rm', ["-rf", created]);
-    console.log(process.cwd());
-    console.log(rm.stdout.toString().length);
-  */
-  await Fs.promises.rm(Path.join("test/root/home/fdpCloud/sites", created), { recursive: true });
+  const errOut = curl.stderr.toString();
+  if (errOut.length > 0)
+    throw Error(errOut);
+  return {status: curl.status === 0 ? 200 : 500, text: curl.stdout};
 }
+
