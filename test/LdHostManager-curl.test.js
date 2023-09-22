@@ -51,7 +51,12 @@ describe('LdHostManager', () => {
     );
     const res = JSON.parse(curl.stdout);
     const repoPath = 'github/StaticFDP/wikidata';
-    expect(res.subdomains).toEqual( [ {
+    expect(res.subdomains.sort(
+      (l, r) => l.DocumentRoot.localeCompare(r.DocumentRoot)
+    )).toEqual( [ {
+    //   "DocumentRoot": "/home/fdpCloud/sites/github/StaticFDP/FlashCard1",
+    //   "ServerName": "flashcard1.fdpcloud.org",
+    // }, {
       "DocumentRoot": '/' + Path.join(Config.repoDir, repoPath),
       "ServerName": `wikidata.${Config.domain}`,
     } ] );
