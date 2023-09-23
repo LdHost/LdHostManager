@@ -1,6 +1,7 @@
 {
   "domain": "fdpcloud.org",
-  "root": "/",
   "repoDir": "home/fdpCloud/sites/",
+
+  "root": "/",
   "subdomainDir": "etc/apache2/sites-available/subdomains.d"
 }
