@@ -9,6 +9,9 @@ const Path = require('path');
 const Cp = require('child_process');
 const debug = require('debug')('test:LdHostManager-curl');
 const {ExpectProcessOutput} = require('./ExpectProcessOutput');
+const {createSite, updateSubdomain} = require('../client/LdHostManager-client');
+
+
 let ServerPort = null;
 let time = new Date();
 const ConfigPath = './test/LdHost-test.config.json';
@@ -85,11 +88,11 @@ describe('LdHostManager', () => {
   });
 
   it('should call createSite', async () => {
-    await createSite("github", "StaticFDP", "Cotton");
+    await testCreateSite("github", "StaticFDP", "Cotton");
   });
 
   it('should call updateSubdomain', async () => {
-    await updateSubdomain("github", "StaticFDP", "Cotton", "cotton");
+    await testUpdateSubdomain("github", "StaticFDP", "Cotton", "cotton");
   });
 
   it('should end', async () => {
@@ -144,34 +147,14 @@ async function curlFetch (url, opts) {
   );
 }
 
-async function fetchPost (url, args) {
-  const method = 'POST';
-  const headers = new Headers([
-    ['Content-Type', 'application/x-www-form-urlencoded'],
-    ['accept', 'application/json'],
-  ]);
-  const body = new URLSearchParams(args);
-  /* using curlFetch to bypass this warning:
-   *   (node:944752) ExperimentalWarning: The Fetch API is an experimental feature. This feature could change at any time
-   *   (Use `node --trace-warnings ...` to show where the warning was created)
-   */
-  const resp = await curlFetch(url, { method, headers, body }); // or curlFetch
-  const status = resp.status;
-  const text = await resp.text();
-  if (!resp.ok)
-    throw Error(text);
-  return {status, text};
-  // return oldCurl(args.type, args.owner, args.repo);
-}
+fetch = curlFetch;
 
-async function createSite (type, owner, repo) {
+async function testCreateSite (type, owner, repo) {
   // const {status, text} = await oldCurl(type, owner, repo);
-  const {status, text} = await fetchPost(
-    `http://localhost:${ServerPort}/createSite`,
-    {type, owner, repo}
-  );
+  const manager = `http://localhost:${ServerPort}/createSite`;
+  const {status, result} = await createSite(manager, type, owner, repo);
   const created = Path.join(type, owner, repo);
-  expect(JSON.parse(text)).toEqual(
+  expect(result).toEqual(
     {"actions":[
       `cloned http://${type}.com/${owner}/${repo} to ${created}`
     ]}
@@ -187,13 +170,11 @@ async function createSite (type, owner, repo) {
   await Fs.promises.rm(Path.join(Config.root, Config.repoDir, created), { recursive: true });
 }
 
-async function updateSubdomain (type, owner, repo, subdomain) {
-  const {status, text} = await fetchPost(
-    `http://localhost:${ServerPort}/updateSubdomain`,
-    { type, owner, repo, subdomain, }
-  );
+async function testUpdateSubdomain (type, owner, repo, subdomain) {
+  const manager = `http://localhost:${ServerPort}/updateSubdomain`;
+  const {status, result} = await updateSubdomain(manager, type, owner, repo, subdomain);
   const created = Path.join(type, owner, repo);
-  expect(JSON.parse(text)).toEqual(
+  expect(result).toEqual(
     {"actions":[
       `linked cotton to ${created}`
     ]}

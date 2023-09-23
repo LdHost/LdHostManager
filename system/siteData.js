@@ -31,18 +31,33 @@ async function getSiteData (root, repoDir, subdomains) {
         const repoDir = Path.join(orgDir, repo.name);
         const sitePath = type.name + '/' + owner.name + '/' + repo.name;
         const subdomain = sitePathToSubdomain[sitePath];
-        const repository = await NodeGit.Repository.open(repoDir);
-        const head = await repository.getHeadCommit( );
-        sites.push({
-          type: type.name,
-          owner: owner.name,
-          repo: repo.name,
-          sitePath,
-          subdomain,
-          dateTime: head.date(),
-          who: head.committer().name(),
-          hash: head.sha(),
-        });
+        const dotGitDir = Path.join(repoDir, ".git");
+        try {
+          Fs.readdirSync(dotGitDir, { withFileTypes: true }); // 1st pass at verifying that it's a git repo
+          const repository = await NodeGit.Repository.open(repoDir);
+          const head = await repository.getHeadCommit( );
+          sites.push({
+            type: type.name,
+            owner: owner.name,
+            repo: repo.name,
+            sitePath,
+            subdomain,
+            dateTime: head.date(),
+            who: head.committer().name(),
+            hash: head.sha(),
+          });
+        } catch (e) {
+          sites.push({
+            type: type.name,
+            owner: owner.name,
+            repo: repo.name,
+            sitePath,
+            subdomain,
+            dateTime: new Date("0000"),
+            who: "I'm broken!!!",
+            hash: e.message,
+          });
+        }
       }
     }
   }

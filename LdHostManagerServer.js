@@ -111,6 +111,7 @@ class LdHostManagementServer {
         payload = { path, status: "not found" };
       }
     } catch (error) {
+      debug(error.message);
       status = 500;
       payload = {type: "error", error: error.message, stack: error.stack};
     }

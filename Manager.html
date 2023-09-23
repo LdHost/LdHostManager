@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Sites</title>
+    <style>
+      body {
+      padding: 50px;
+      font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+      }
+      
+      a {
+          color: #00B7FF;
+      }
+      
+      table {
+          border-collapse:collapse;
+          /* width:100%; */
+          /* max-width:700px; */
+          /* min-width:400px; */
+          text-align:center;
+      }
+      
+      caption {
+          caption-side:bottom;
+          font-weight:bold;
+          font-style:italic;
+          margin:4px;
+      }
+      
+      table,th, td {
+          border: 1px solid gray;
+      }
+      
+      th, td {
+          height: 24px;
+          padding:0 2em;
+          vertical-align:top;
+      }
+      
+      .repo { background-color: #ffd }
+      .commit { background-color: #dff }
+      .progress { background-color: #ddf }
+      .success { background-color: #dfd }
+      .error { background-color: #fdd }
+      .rowtitle { font-weight:bold; }
+      td { text-align: left; }
+      th { background-image:url(table-shaded.png); }
+
+      td button {
+          font-size: 1ex;
+          padding: 0 0.5em;
+      }
+    </style>
+    <script src="./frontend-config.js"></script>
+    <script src="./frontend.js"></script>
+    <script src="./client/LdHostManager-client"></script>
+  </head>
+  <body>
+    <h1>Sites</h1>
+    <p>Sites hosted here:</p>
+    <div>
+      <table>
+        <tr>
+          <th colspan="3" class="repo">repo</th>
+          <th>subdomain</th>
+          <th colspan="3" class="commit">last commit</th>
+        </tr>
+        <tr>
+          <th class="repo">type</th>
+          <th class="repo">owner</th>
+          <th class="repo">name</th>
+          <th>*.fdpcloud.org</th>
+          <th class="commit">when</th>
+          <th class="commit">who</th>
+          <th class="commit">hash</th>
+        </tr>
+        <tbody id="sites">
+          <script>addElements(document.currentScript.parentElement);</script>
+        </tbody>
+        <tbody class="newSite">
+          <tr>
+            <td>
+              <input type="text" placeholder="github">
+            </td>
+            <td>
+              <input type="text" placeholder="StaticFDP">
+            </td>
+            <td>
+              <input type="text" placeholder="repo name">
+            </td>
+            <td>
+              <input type="text" placeholder="subdomain">
+            </td>
+            <td>
+              <input type="submit" value="create" onclick="invokeCreateSite(this.parentNode.parentNode)">
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h2 style="float:left">Messages</h2><p style="float:left; padding-top: 1.3ex; padding-left: .5em;">(most recent first)</p><div style="clear:both"/>
+    </div>
+    <ol id="messages"></ol>
+    <!-- <script type="text/javascript" src="http://localhost/checkouts/StaticFDP/FdpManager/backend/system/formHandlers.js"> -->
+    </script>
+  </body>
+</html>
