@@ -41,7 +41,7 @@ function renderRow (site) {
       <td class="commit">${date}<br/>${time}</td>
       <td class="commit">${site.who}</td>
       <td class="commit">${site.hash}</td>
-      <td><a href="http://${Config.domain}/home/fdpCloud/sites/${site.type}/${site.owner}/${site.repo}">explore</a></td>
+      <td><a href="http://${Config.domain}/${repoDir}/${site.type}/${site.owner}/${site.repo}">explore</a></td>
 `;
   return ret;
 }
