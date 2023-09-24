@@ -159,7 +159,7 @@ async function deleteSubdomain (debug, root, subdomain, repoDir, subdomainDir) {
   const subdomainFilePath = Path.join(root, subdomainDir, subdomain);
   await Fs.promises.unlink(subdomainFilePath);
 
-  debug(`deleted subdomainFilePath`);
+  debug(`deleted ${subdomainFilePath}`);
   return [`deleted ${subdomain}`];
 }
 

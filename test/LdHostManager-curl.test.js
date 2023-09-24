@@ -102,6 +102,14 @@ describe('LdHostManager', () => {
     await testUpdateSubdomain("github", "StaticFDP", "Cotton", "cotton");
   });
 
+  it('should call deleteSubdomain', async () => {
+    await testDeleteSubdomain("cotton");
+  });
+
+  it('should call deleteSite', async () => {
+    await testDeleteSite("github", "StaticFDP", "Cotton");
+  });
+
   it('should end', async () => {
     Server.process.kill('SIGINT');
     expect(await Server.isDone()).toEqual(2);
@@ -169,12 +177,15 @@ async function testCreateSite (type, owner, repo) {
   expect(status).toEqual(200);
   // should log that it was cloned
   expect((await Server.expectErr(/(cloned [^ ]+ to [^ ]+\n)/))[0]).toMatch(/cloned [^ ]+ to [^ ]+\n/);
-  /*
-    const rm = Cp.spawnSync('rm', ["-rf", created]);
-    console.log(process.cwd());
-    console.log(rm.stdout.toString().length);
-  */
-  await Fs.promises.rm(Path.join(Config.root, Config.repoDir, created), { recursive: true });
+  // Don't clean up 'cause we'll need this in the deleteSite test.
+}
+
+async function testDeleteSite (type, owner, repo) {
+  const manager = `http://localhost:${ServerPort}/deleteSite`;
+  const {status, result} = await deleteSite(manager, type, owner, repo);
+  expect(status).toEqual(200);
+  // should log that it was cloned
+  expect((await Server.expectErr(/(deleted.*\n)/))[0]).toEqual('deleted test/root/home/fdpCloud/sites/Cotton\n');
 }
 
 async function testUpdateSubdomain (type, owner, repo, subdomain) {
@@ -189,12 +200,15 @@ async function testUpdateSubdomain (type, owner, repo, subdomain) {
   expect(status).toEqual(200);
   // should log that it was cloned
   expect((await Server.expectErr(/(linked [^ ]+ to [^ ]+\n)/))[0]).toMatch(/linked [^ ]+ to [^ ]+\n/);
-  /*
-    const rm = Cp.spawnSync('rm', ["-rf", created]);
-    console.log(process.cwd());
-    console.log(rm.stdout.toString().length);
-  */
-  await Fs.promises.rm(Path.join(Config.root, Config.subdomainDir, subdomain), { recursive: true });
+  // Don't clean up 'cause we'll need this in the deleteSubdomain test.
+}
+
+async function testDeleteSubdomain (subdomain) {
+  const manager = `http://localhost:${ServerPort}/deleteSubdomain`;
+  const {status, result} = await deleteSubdomain(manager, subdomain);
+  expect(status).toEqual(200);
+  // should log that it was cloned
+  expect((await Server.expectErr(/(deleted.*\n)/))[0]).toEqual('deleted test/root/etc/apache2/sites-available/subdomains.d/cotton\n');
 }
 
 async function oldCurl (type, owner, repo) {
@@ -213,3 +227,14 @@ async function oldCurl (type, owner, repo) {
     throw Error(errOut);
   return {status: curl.status === 0 ? 200 : 500, text: curl.stdout};
 }
+
+/*
+  scratchpad
+
+  delete a file with spawn:
+    const rm = Cp.spawnSync('rm', ["-rf", created]);
+
+  delete a file with fs.rm
+    await Fs.promises.rm(Path.join(Config.root, Config.repoDir, created), { recursive: true });
+
+*/
