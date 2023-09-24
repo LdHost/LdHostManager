@@ -60,7 +60,7 @@ describe('LdHostManager', () => {
     //   "DocumentRoot": "/home/fdpCloud/sites/github/StaticFDP/FlashCard1",
     //   "ServerName": "flashcard1.fdpcloud.org",
     // }, {
-      "DocumentRoot": '/' + Path.join(Config.repoDir, repoPath),
+      "DocumentRoot": repoPath,
       "ServerName": `wikidata.${Config.domain}`,
     } ] );
     expect(res.sites.sort((l, r) => l.repo.localeCompare(r))).toEqual(

@@ -18,21 +18,11 @@ async function addElements (addHere) {
     appendTr(addHere, `Error loading sites from <${manager}>: ` + e.message, 'error', 3);
   }
 
-  const sitePathToSubdomain = result.subdomains.reduce((acc, subd) => {
-    let sitePath = subd.DocumentRoot;
-    if (sitePath.startsWith('/')) {
-      sitePath = sitePath.substring(1);
-      if (sitePath.startsWith(Config.repoDir)) {
-        sitePath = sitePath.substring(Config.repoDir.length);
-        acc[sitePath] = subd.ServerName.split('.')[0];
-      } else {
-        appendTr(addHere, `DocumentRoot expected to start with '${Config.repoDir}': ${sitePath}`, 'error', 3);
-      }
-    } else {
-      appendTr(addHere, `DocumentRoot expected to start with '/': ${sitePath}`, 'error', 3);
+  result.subdomains.forEach((subd) => {
+    if (subd.errors) {
+      appendTr(addHere, `Subdomain problem ${subd.ServerName} -> <${subd.DocumentRoot}>: ${subd.errors.join("\n")}`, 'error', 3);
     }
-    return acc;
-  }, {});
+  });
 
   result.sites.forEach(site => addHere.append(renderRow(site)));
 }

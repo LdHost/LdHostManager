@@ -1,7 +1,7 @@
 <VirtualHost *:80>
   ServerName wikidata.fdpcloud.org
-  DocumentRoot /home/fdpCloud/sites/github/StaticFDP/wikidata
-  <Directory /home/fdpCloud/sites/github/StaticFDP/wikidata>
+  DocumentRoot test/root/home/fdpCloud/sites/github/StaticFDP/wikidata
+  <Directory test/root/home/fdpCloud/sites/github/StaticFDP/wikidata>
     include ./sites-available/fdpcloud-dirConfig
   </Directory>
   include ./sites-available/fdpcloud-common
@@ -9,8 +9,8 @@
 
 <VirtualHost *:443>
   ServerName wikidata.fdpcloud.org
-  DocumentRoot /home/fdpCloud/sites/github/StaticFDP/wikidata
-  <Directory /home/fdpCloud/sites/github/StaticFDP/wikidata>
+  DocumentRoot test/root/home/fdpCloud/sites/github/StaticFDP/wikidata
+  <Directory test/root/home/fdpCloud/sites/github/StaticFDP/wikidata>
     include ./sites-available/fdpcloud-dirConfig
   </Directory>
   include ./sites-available/fdpcloud-ssl

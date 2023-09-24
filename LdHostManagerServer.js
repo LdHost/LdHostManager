@@ -52,7 +52,7 @@ class LdHostManagementServer {
     // Hand CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Request-Method', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET, DELETE');
     res.setHeader('Access-Control-Allow-Headers', '*');
     if ( req.method === 'OPTIONS' ) {
       res.writeHead(200);
@@ -72,7 +72,7 @@ class LdHostManagementServer {
         break;
 
       case '/sites':
-        const subdomains = await getSubdomainData(this.root, this.subdomainDir);
+        const subdomains = await getSubdomainData(debug, this.root, this.repoDir, this.subdomainDir);
         const sites = await getSiteData(this.root, this.repoDir, subdomains);
         payload = { subdomains, sites };
         break;

@@ -7,17 +7,7 @@ async function getSiteData (root, repoDir, subdomains) {
   const errors = [];
   const sitePathToSubdomain = subdomains.reduce((acc, subd) => {
     let sitePath = subd.DocumentRoot;
-    if (sitePath.startsWith('/')) {
-      sitePath = sitePath.substring(1);
-      if (sitePath.startsWith(repoDir)) {
-        sitePath = sitePath.substring(repoDir.length);
-        acc[sitePath] = subd.ServerName.split('.')[0];
-      } else {
-        errors.push(`DocumentRoot expected to start with '${repoDir}': ${sitePath}`);
-      }
-    } else {
-      errors.push(`DocumentRoot expected to start with '/': ${sitePath}`);
-    }
+    acc[sitePath] = subd.ServerName.split('.')[0];
     return acc;
   }, {});
   console.log(sitePathToSubdomain);
@@ -46,7 +36,7 @@ async function getSiteData (root, repoDir, subdomains) {
             who: head.committer().name(),
             hash: head.sha(),
           });
-        } catch (e) {debugger
+        } catch (e) {
           sites.push({
             type: type.name,
             owner: owner.name,
