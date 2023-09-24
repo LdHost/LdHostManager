@@ -41,7 +41,7 @@ function renderRow (site) {
   const ret = document.createElement('tr');
   const [date, time] = new Date(site.dateTime).toISOString().split('T');
   ret.innerHTML = `
-      <td class="repo"><button onclick="removeSite(this)">⌫</button> ${site.type}</td>
+      <td class="repo"><button onclick="invokeDeleteSite(this)">⌫</button> ${site.type}</td>
       <td class="repo">${site.owner}</td>
       <td class="repo">
         <a href="http://github.com/${site.owner}${site.repo}">${site.repo}</a>
@@ -62,7 +62,7 @@ function renderSubdomain (type, owner, repo, subdomain) {
              placeholder="${repo.toLowerCase()}"
              onchange="invokeUpdateSubdomain(this, '${type}', '${owner}', '${repo}', this.value)"
           ></input>`
-    : `<a href="${subdomain}.${Config.domain}">${subdomain}</a> <button onclick="removeSubdomain(this)">⌫</button>`;
+    : `<a href="${subdomain}.${Config.domain}">${subdomain}</a> <button onclick="invokeDeleteSubdomain(this, this.previousElementSibling.text)">⌫</button>`;
 }
 
 async function invokeCreateSite (tr) {
@@ -116,6 +116,35 @@ async function invokeCreateSite (tr) {
   }
 }
 
+async function invokeDeleteSite(tr) {
+  const [typeElt, ownerElt, repoElt, subdomainElt] =
+        [...tr.querySelectorAll('input')]
+  const [type, owner, repo, subdomain] =
+        [typeElt, ownerElt, repoElt, subdomainElt]
+        .map(elt => elt.value);
+
+  if (subdomain)
+    invokeDeleteSubdomain(newTr.querySelector('input'), subdomain);
+
+  // Mirror the repo
+  const manager = new URL('deleteSite', Config.manager).href;
+  try {
+    const {status, result} = await deleteSite(manager, type, owner, repo);
+    if (status !== 200) {
+      alert(`deleteSite(${manager}, ${type}, ${owner}, ${repo}) => ${status}`);
+    } else {
+      appendTr(tr, result.actions[0], 'success', 3);
+
+      // Delete this row.
+      const tBody = document.querySelector("#sites");
+      tBody.removeChild(tr);
+    }
+  } catch (e) {
+    const text = `deleteSite(<${manager}>, "${type}", "${owner}", "${repo}", "${subdomain}") =>\n` + e.message
+    appendTr(tr, text, 'error', 3);
+  }
+}
+
 async function invokeUpdateSubdomain (input, type, owner, repo, subdomain) {
   const manager = new URL('updateSubdomain', Config.manager).href;
   try {
@@ -127,16 +156,28 @@ async function invokeUpdateSubdomain (input, type, owner, repo, subdomain) {
 
       // Replace input
       input.parentNode.innerHTML = renderSubdomain(type, owner, repo, subdomain);
-      /* could do something like this, but not sure it's betteR:
-      const template = document.createElement('template');
-      template.innerHTML = renderSubdomain(type, owner, repo, subdomain).trim(); // reduce noise
-      .. do something children like:
-      input.parentNode.parentNode.replace(template.content.firstChild, input.parentNode);
-      */
     }
   } catch (e) {
     const text = `updateSubdomain(<${manager}>, "${type}", "${owner}", "${repo}", "${subdomain}") =>\n` + e.message
     appendTr(input.parentNode.parentNode, text, 'error', 3);    
+  }
+}
+
+async function invokeDeleteSubdomain (input, type, owner, repo, subdomain) {
+  const manager = new URL('deleteSubdomain', Config.manager).href;
+  try {
+    const {status, result} = await deleteSubdomain(manager, subdomain);
+    if (status !== 200) {
+      throw Error(`got status code ${status}`);
+    } else {
+      appendTr(input.parentNode.parentNode, result.actions[0], 'success', 3);
+
+      // Replace input
+      input.parentNode.innerHTML = renderSubdomain(type, owner, repo, null);
+    }
+  } catch (e) {
+    const text = `deleteSubdomain(<${manager}>, "${type}", "${owner}", "${repo}", "${subdomain}") =>\n` + e.message
+    appendTr(input.parentNode.parentNode, text, 'error', 3);
   }
 }
 

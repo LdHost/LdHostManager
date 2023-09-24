@@ -65,6 +65,13 @@ describe('LdHostManager', () => {
     } ] );
     expect(res.sites.sort((l, r) => l.repo.localeCompare(r))).toEqual(
       [
+        { "dateTime": "0000-01-01T00:00:00.000Z",
+          "hash": "ENOENT: no such file or directory, scandir 'github/BrokenOwner/BrokenRepo/.git'",
+          "owner": "BrokenOwner",
+          "repo": "BrokenRepo",
+          "sitePath": "github/BrokenOwner/BrokenRepo",
+          "type": "github",
+          "who": "I'm broken!!!" },
         { "dateTime": "2023-09-15T15:24:22.000Z",
           "hash": "3285971ea73195c7940519c55652530392c651bb",
           "owner": "StaticFDP",

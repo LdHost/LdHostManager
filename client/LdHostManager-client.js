@@ -1,5 +1,4 @@
-async function fetchPost (url, args) {
-  const method = 'POST';
+async function fetchMethod (method, url, args) {
   const headers = new Headers([
     ['Content-Type', 'application/x-www-form-urlencoded'],
     ['accept', 'application/json'],
@@ -20,12 +19,20 @@ async function fetchPost (url, args) {
 }
 
 async function createSite (manager, type, owner, repo) {
-  return await fetchPost( manager, {type, owner, repo} );
+  return await fetchMethod('POST', manager, {type, owner, repo});
 }
 
 async function updateSubdomain (manager, type, owner, repo, subdomain) {
-  return await fetchPost( manager, { type, owner, repo, subdomain, } );
+  return await fetchMethod('POST', manager, {type, owner, repo, subdomain});
+}
+
+async function deleteSite (manager, type, owner, repo) {
+  return await fetchMethod('DELETE', manager, {type, owner, repo});
+}
+
+async function deleteSubdomain (manager, subdomain) {
+  return await fetchMethod('DELETE', manager, {subdomain});
 }
 
 if (typeof module !== 'undefined')
-  module.exports = {createSite, updateSubdomain};
+  module.exports = {createSite, updateSubdomain, deleteSubdomain, deleteSite};

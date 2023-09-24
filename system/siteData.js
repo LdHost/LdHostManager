@@ -28,13 +28,13 @@ async function getSiteData (root, repoDir, subdomains) {
     for (const owner of Fs.readdirSync(typeDir, { withFileTypes: true })) {
       const orgDir = Path.join(typeDir, owner.name);
       for (const repo of Fs.readdirSync(orgDir, { withFileTypes: true })) {
-        const repoDir = Path.join(orgDir, repo.name);
+        const repoPath = Path.join(orgDir, repo.name);
         const sitePath = type.name + '/' + owner.name + '/' + repo.name;
         const subdomain = sitePathToSubdomain[sitePath];
-        const dotGitDir = Path.join(repoDir, ".git");
+        const dotGitDir = Path.join(repoPath, ".git");
         try {
           Fs.readdirSync(dotGitDir, { withFileTypes: true }); // 1st pass at verifying that it's a git repo
-          const repository = await NodeGit.Repository.open(repoDir);
+          const repository = await NodeGit.Repository.open(repoPath);
           const head = await repository.getHeadCommit( );
           sites.push({
             type: type.name,
@@ -46,7 +46,7 @@ async function getSiteData (root, repoDir, subdomains) {
             who: head.committer().name(),
             hash: head.sha(),
           });
-        } catch (e) {
+        } catch (e) {debugger
           sites.push({
             type: type.name,
             owner: owner.name,
@@ -55,7 +55,7 @@ async function getSiteData (root, repoDir, subdomains) {
             subdomain,
             dateTime: new Date("0000"),
             who: "I'm broken!!!",
-            hash: e.message,
+            hash: e.message.replace(new RegExp(Path.join(root, repoDir), "g"), ""),
           });
         }
       }
@@ -64,9 +64,73 @@ async function getSiteData (root, repoDir, subdomains) {
   return sites;
 }
 
+/**
+ * early returns for errors
+ */
+function expectArgs (labeledArgs) {
+  labeledArgs.forEach(arg => {
+    if (!arg.value) throw Error(`missing ${arg.name}`);
+  });
+}
+async function createSite (debug, root, type, owner, repo, repoDir) {
+  expectArgs([
+    {name: 'type', value: type},
+    {name: 'owner', value: owner},
+    {name: 'repo', value: repo},
+  ]);
+
+  let repoUrl = null;
+  // let repoData = null;
+  switch (type) {
+  case 'github':
+    repoUrl = `http://github.com/${Path.join(owner, repo)}`;
+    // repoData = await getGithubRepo(repoUrl);
+    // debug('remote: ' + JSON.stringify(repoData));
+    break;
+  default:
+    throw Error(`unknown repo type: ${type}`);
+  }
+
+  const absSiteDir = await ensureRepoDir(debug, `${Path.join(root, repoDir)}`, type, owner, repo);
+  debug(`cloning ${repoUrl} to: ${absSiteDir}`);
+  if (false) {
+    // Cloning over API requires auth token for no reason I can think of.
+    const repoObject = await NodeGit.Clone(repoUrl, absSiteDir, {
+      checkoutBranch: 'main'
+    });
+  } else {
+    Cp.execSync(`git clone ${repoUrl} ${absSiteDir}`);
+  }
+  debug(`cloned ${repoUrl} to ${absSiteDir}`);
+  return [`cloned ${repoUrl} to ${Path.join(type, owner, repo)}`];
+}
+
+async function deleteSite (debug, root, type, owner, repo, repoDir) {
+  expectArgs([
+    {name: 'type', value: type},
+    {name: 'owner', value: owner},
+    {name: 'repo', value: repo},
+  ]);
+
+  const deleted = [];
+  await Fs.promises.rm(Path.join(root, repoDir, type, owner, repo), { recursive: true });
+  deleted.unshift(repo);
+  if (Fs.readdirSync(Path.join(root, repoDir, type, owner)).length === 0) {
+    await Fs.promises.rmdir(Path.join(root, repoDir, type, owner));
+    deleted.unshift(owner);
+    if (Fs.readdirSync(Path.join(root, repoDir, type)).length === 0) {
+      await Fs.promises.rmdir(Path.join(root, repoDir, type));
+      deleted.unshift(type);
+    }
+  }
+  const deletedStr = Path.join.apply(null, deleted);
+  debug(`deleted ${Path.join(root, repoDir, deletedStr)}`);
+  return [`deleted ${deletedStr}`];
+}
+
 async function updateSubdomain (debug, root, type, owner, repo, subdomain, repoDir, subdomainDir) {
   const sitePath = Path.join(type, owner, repo);
-  const absSiteDir = `${root}${repoDir}${sitePath}`;
+  const absSiteDir = Path.join(root, repoDir, sitePath);
   debug(`creating subdomain linking ${subdomain} to ${absSiteDir}`);
   await Fs.promises.stat(Path.join(root, subdomainDir)); // possibly throw ENOENT to caller
   const subdomainFilePath = Path.join(root, subdomainDir, subdomain);
@@ -92,6 +156,22 @@ ${vhostContents}
   await Fs.promises.writeFile(subdomainFilePath, vhostText, { flag: 'wx' });// possibly throw EEXIST to caller
   debug(`linked ${subdomainFilePath} to ${absSiteDir}`);
   return [`linked ${subdomain} to ${sitePath}`];
+}
+
+async function deleteSubdomain (debug, root, subdomain, repoDir, subdomainDir) {
+  expectArgs([
+    {name: 'root', value: root},
+    {name: 'subdomain', value: subdomain},
+    {name: 'repoDir', value: repoDir},
+    {name: 'subdomainDir', value: subdomainDir},
+  ]);
+  throw Error(`deleteSubdomain(debug, ${root}, ${type}, ${owner}, ${repo}, ${subdomain}, ${repoDir}, ${subdomainDir})`)
+
+  const subdomainFilePath = Path.join(root, subdomainDir, subdomain);
+  await Fs.promises.unlink(subdomainFilePath);
+
+  debug(`deleted subdomainFilePath`);
+  return [`deleted ${subdomain}`];
 }
 
 async function ensureRepoDir (debug, siteDir, type, owner, repo) {
@@ -120,43 +200,4 @@ async function ensureRepoDir (debug, siteDir, type, owner, repo) {
   return d;
 }
 
-/**
- * early returns for errors
- */
-async function createSite (debug, root, type, owner, repo, repoDir) {
-  const sitePath = root + repoDir;
-  const args = [
-    {name: 'type', value: type},
-    {name: 'owner', value: owner},
-    {name: 'repo', value: repo},
-  ];
-  args.forEach(arg => {
-    if (!arg.value) throw Error(`missing ${arg.name}`);
-  });
-  let repoUrl = null;
-  let repoData = null;
-  switch (type) {
-  case 'github':
-    repoUrl = `http://github.com/${owner}/${repo}`;
-    // repoData = await getGithubRepo(repoUrl);
-    // debug('remote: ' + JSON.stringify(repoData));
-    break;
-  default:
-    throw Error(`unknown repo type: ${type}`);
-  }
-
-  const absSiteDir = await ensureRepoDir(debug, `${root}${repoDir}`, type, owner, repo);
-  debug(`cloning ${repoUrl} to: ${absSiteDir}`);
-  if (false) {
-    // Cloning over API requires auth token for no reason I can think of.
-    const repoObject = await NodeGit.Clone(repoUrl, absSiteDir, {
-      checkoutBranch: 'main'
-    });
-  } else {
-    Cp.execSync(`git clone ${repoUrl} ${absSiteDir}`);
-  }
-  debug(`cloned ${repoUrl} to ${absSiteDir}`);
-  return [`cloned ${repoUrl} to ${Path.join(type, owner, repo)}`];
-}
-
-module.exports = {getSiteData, updateSubdomain, createSite};
+module.exports = {getSiteData, createSite, deleteSite, updateSubdomain, deleteSubdomain};

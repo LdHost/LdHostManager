@@ -6,7 +6,7 @@ const {parse} = require('querystring');
 const Fs = require('fs');
 
 const {getSubdomainData} = require('./system/subdomainData');
-const {getSiteData, createSite, updateSubdomain} = require('./system/siteData');
+const {getSiteData, createSite, deleteSite, updateSubdomain, deleteSubdomain} = require('./system/siteData');
 
 class LdHostManagementServer {
   static FormUrlencoded = 'application/x-www-form-urlencoded';
@@ -40,8 +40,8 @@ class LdHostManagementServer {
   onListening () {
     const addr = this.server.address();
     const bind = typeof addr === 'string'
-        ? 'pipe ' + addr
-        : 'port ' + addr.port;
+          ? 'pipe ' + addr
+          : 'port ' + addr.port;
     debug('Listening on ' + bind);
   }
 
@@ -79,32 +79,65 @@ class LdHostManagementServer {
 
       case '/createSite':
       case '/updateSubdomain':
-        if (req.method !== "POST")
-          throw Error(`${path} is a POST method`);
-        const searchParams = await this.parseBody(req, url.searchParams);
+        {
+          if (req.method !== "POST")
+            throw Error(`${path} is a POST method`);
+          const searchParams = await this.parseBody(req, url.searchParams);
 
-        switch (path) {
+          switch (path) {
 
-        case '/createSite':
-          {
-            const {type, owner, repo} = this.expectAll(searchParams, 'type', 'owner', 'repo');
-            payload = {
-              actions: await createSite(debug, this.root, type, owner, repo, this.repoDir)
-            };
+          case '/createSite':
+            {
+              const {type, owner, repo} = this.expectAll(searchParams, 'type', 'owner', 'repo');
+              payload = {
+                actions: await createSite(debug, this.root, type, owner, repo, this.repoDir)
+              };
+            }
+            break;
+
+          case '/updateSubdomain':
+            {
+              const {type, owner, repo, subdomain} = this.expectAll(searchParams, 'type', 'owner', 'repo', 'subdomain');
+              payload = {
+                actions: await updateSubdomain(debug, this.root, type, owner, repo, subdomain, this.repoDir, this.subdomainDir)
+              };
+            }
+            break;
+
           }
-          break;
-
-        case '/updateSubdomain':
-          {
-            const {type, owner, repo, subdomain} = this.expectAll(searchParams, 'type', 'owner', 'repo', 'subdomain');
-            payload = {
-              actions: await updateSubdomain(debug, this.root, type, owner, repo, subdomain, this.repoDir, this.subdomainDir)
-            };
-          }
-          break;
-
         }
         break;
+
+      case '/deleteSite':
+      case '/deleteSubdomain':
+        {
+          if (req.method !== "POST")
+            throw Error(`${path} is a POST method`);
+          const searchParams = await this.parseBody(req, url.searchParams);
+
+          switch (path) {
+
+          case '/deleteSite':
+            {
+              const {type, owner, repo} = this.expectAll(searchParams, 'type', 'owner', 'repo');
+              payload = {
+                actions: await deleteSite(debug, this.root, type, owner, repo, this.repoDir)
+              };
+            }
+            break;
+
+          case '/deleteSubdomain':
+            {
+              const {subdomain} = this.expectAll(searchParams, 'subdomain');
+              payload = {
+                actions: await deleteSubdomain(debug, this.root, subdomain, this.repoDir, this.subdomainDir)
+              };
+            }
+            break;
+
+          }
+          break;
+        }
 
       default:
         status = 404;
@@ -113,7 +146,7 @@ class LdHostManagementServer {
     } catch (error) {
       debug(error.message);
       status = 500;
-      payload = {type: "error", error: error.message, stack: error.stack};
+      payload = {type: "error", error: error.message.replace(new RegExp(this.root, "g"), ""), stack: error.stack};
     }
     res.writeHead(status, {'Content-Type': 'application/json'});
     res.write(JSON.stringify(payload));
