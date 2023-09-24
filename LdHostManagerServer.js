@@ -3,6 +3,7 @@
 const debug = require('debug')('backend:server');
 const {createServer} = require('http');
 const {parse} = require('querystring');
+const Path = require('path');
 const Fs = require('fs');
 
 const {getSubdomainData} = require('./system/subdomainData');
@@ -25,6 +26,7 @@ class LdHostManagementServer {
     this.root = config.root;
     this.repoDir = config.repoDir;
     this.subdomainDir = config.subdomainDir;
+    this.webAppDir = config.webAppDir; // may not be set
 
     this.server = createServer(this.requestHandler.bind(this));
 
@@ -61,9 +63,12 @@ class LdHostManagementServer {
     }
 
     const url = new URL(req.url, 'https://example.com');
-    const path = url.pathname; // it's NOT a URL!
+    const path = url.pathname === '/favicon.ico' && this.webAppDir // it's NOT a URL!
+          ? Path.join(this.webAppDir, 'favicon.ico') // hack to shut up console messages
+          : url.pathname;
     let status = 200;
     let payload = null;
+
     try {
       switch (path) {
 
@@ -140,6 +145,30 @@ class LdHostManagementServer {
         }
 
       default:
+        if (this.webAppDir) {
+          const iWebApp = path.indexOf(this.webAppDir);
+          if (iWebApp !== -1) {
+            const rest = path.substring(iWebApp + this.webAppDir.length);
+            const serveFilePath = Path.join(__dirname, 'client', rest);
+            try {
+              const {ext} = Path.parse(serveFilePath);
+              const text = await Fs.promises.readFile(serveFilePath, 'utf-8');
+              let mediaType = 'application/octet-stream';
+              switch (ext) {
+              case '.html': mediaType = 'text/html; charset=utf-8'; break;
+              case '.js': mediaType = 'text/javascript; charset=utf-8'; break;
+              case '.css': mediaType = 'text/css; charset=utf-8'; break;
+              case '.ico': mediaType = 'image/vnd.microsoft.icon'; break;
+              }
+              res.writeHead(status, {'Content-Type': mediaType});
+              res.write(text);
+              res.end();
+              return;
+            } catch (e) {
+              // fall through to 404
+            }
+          }
+        }
         status = 404;
         payload = { path, status: "not found" };
       }
