@@ -111,7 +111,7 @@ class LdHostManagementServer {
       case '/deleteSite':
       case '/deleteSubdomain':
         {
-          if (req.method !== "POST")
+          if (req.method !== "DELETE")
             throw Error(`${path} is a POST method`);
           const searchParams = await this.parseBody(req, url.searchParams);
 

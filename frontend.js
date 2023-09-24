@@ -31,7 +31,7 @@ function renderRow (site) {
   const ret = document.createElement('tr');
   const [date, time] = new Date(site.dateTime).toISOString().split('T');
   ret.innerHTML = `
-      <td class="repo"><button onclick="invokeDeleteSite(this)">⌫</button> ${site.type}</td>
+      <td class="repo"><button onclick="invokeDeleteSite(this.parentNode.parentNode)">⌫</button> ${site.type}</td>
       <td class="repo">${site.owner}</td>
       <td class="repo">
         <a href="http://github.com/${site.owner}${site.repo}">${site.repo}</a>
@@ -52,7 +52,7 @@ function renderSubdomain (type, owner, repo, subdomain) {
              placeholder="${repo.toLowerCase()}"
              onchange="invokeUpdateSubdomain(this, '${type}', '${owner}', '${repo}', this.value)"
           ></input>`
-    : `<a href="${subdomain}.${Config.domain}">${subdomain}</a> <button onclick="invokeDeleteSubdomain(this, this.previousElementSibling.text)">⌫</button>`;
+    : `<a href="${subdomain}.${Config.domain}">${subdomain}</a> <button onclick="invokeDeleteSubdomain(this, '${type}', '${owner}', '${repo}', this.previousElementSibling.text)">⌫</button>`;
 }
 
 async function invokeCreateSite (tr) {
@@ -108,13 +108,13 @@ async function invokeCreateSite (tr) {
 
 async function invokeDeleteSite(tr) {
   const [typeElt, ownerElt, repoElt, subdomainElt] =
-        [...tr.querySelectorAll('input')]
+        [...tr.querySelectorAll('td')].slice(0, 4)
   const [type, owner, repo, subdomain] =
         [typeElt, ownerElt, repoElt, subdomainElt]
-        .map(elt => elt.value);
+        .map(elt => elt.innerText.replace(/ *⌫ */, '')) // TOOD: horrible hack
 
   if (subdomain)
-    invokeDeleteSubdomain(newTr.querySelector('input'), subdomain);
+    invokeDeleteSubdomain(subdomainElt.querySelector('a'), type, owner, repo, subdomain);
 
   // Mirror the repo
   const manager = new URL('deleteSite', Config.manager).href;

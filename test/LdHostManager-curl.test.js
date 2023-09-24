@@ -9,7 +9,7 @@ const Path = require('path');
 const Cp = require('child_process');
 const debug = require('debug')('test:LdHostManager-curl');
 const {ExpectProcessOutput} = require('./ExpectProcessOutput');
-const {createSite, updateSubdomain} = require('../client/LdHostManager-client');
+const {createSite, deleteSite, updateSubdomain, deleteSubdomain} = require('../client/LdHostManager-client');
 
 
 let ServerPort = null;
