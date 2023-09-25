@@ -78,7 +78,7 @@ describe('LdHostManager', () => {
           "repo": "FlashCard1",
           "sitePath": "github/StaticFDP/FlashCard1",
           "type": "github",
-          "who": "GitHub" },
+          "who": "andrawaag" },
         { "dateTime": "2023-09-15T08:09:50.000Z",
           "hash": "882a283c7baf83030f2ab697a4edf1eb5db6420b",
           "owner": "StaticFDP",

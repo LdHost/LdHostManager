@@ -1,4 +1,4 @@
-const NodeGit = require( 'nodegit' );
+// const NodeGit = require('nodegit'); -- removed because it was hard to gyp on small machines
 const Fs = require('fs');
 const Path = require('path');
 const Cp = require('child_process');
@@ -24,17 +24,23 @@ async function getSiteData (root, repoDir, subdomains) {
         const dotGitDir = Path.join(repoPath, ".git");
         try {
           Fs.readdirSync(dotGitDir, { withFileTypes: true }); // 1st pass at verifying that it's a git repo
-          const repository = await NodeGit.Repository.open(repoPath);
-          const head = await repository.getHeadCommit( );
+          // nodegit takes enormous resources. swapping to sketchy parsing of output
+          // const repository = await NodeGit.Repository.open(repoPath);
+          // const head = await repository.getHeadCommit( );
+          const logProcess = Cp.execSync(`git -C ${repoPath} log -i -1`);
+          const logOutput = logProcess.toString();
+          const m = logOutput.match(/commit ([a-z0-9]+).*?\nAuthor: (.*?)(?: <[^>]+>)?\nDate: *(.*?)\n/sm);
+          if (!m)
+            throw Error(`couldn't parse git log output: ${logOutput}`);
           sites.push({
             type: type.name,
             owner: owner.name,
             repo: repo.name,
             sitePath,
             subdomain,
-            dateTime: head.date(),
-            who: head.committer().name(),
-            hash: head.sha(),
+            dateTime: new Date(m[3]),
+            who: m[2],
+            hash: m[1],
           });
         } catch (e) {
           sites.push({

@@ -11,12 +11,14 @@
   "license": "ISC",
   "dependencies": {
     "child_process": "^1.0.2",
-    "nodegit": "^0.27.0"
+    "debug": "^4.3.4"
   },
   "devDependencies": {
     "jest": "^29.7.0"
   },
   "jest": {
-    "testMatch": ["**/test/*.test.js"]
+    "testMatch": [
+      "**/test/*.test.js"
+    ]
   }
 }
