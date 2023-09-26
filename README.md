@@ -89,3 +89,20 @@ curl -X DELETE -s http://localhost:3002/deleteSubdomain -d subdomain=cotton
 ``` json
 {"actions":["deleted cotton"]}
 ```
+
+## Debugging
+
+Note [ExpectProcessOutput's debugging](https://github.com/ericprud/ExpectProcessOutput#debugging), e.g.
+```
+DEBUG=\*,-babel\* ./node_modules/.bin/jest test/LdHostManager-curl.test.js
+  test:LdHostManager-curl stderr has 1 expectors to match [[
+  test:LdHostManager-curl 2023-09-26T07:21:44.414Z backend:server Listening on port 3002
+  test:LdHostManager-curl
+  test:LdHostManager-curl ]] +0ms
+  test:LdHostManager-curl   0: /(backend:server Listening on port (\d+).*\n)/ +1ms
+  test:LdHostManager-curl stdout has 1 expectors to match [[
+  test:LdHostManager-curl { 'github/StaticFDP/wikidata': 'wikidata' }
+  test:LdHostManager-curl
+  test:LdHostManager-curl ]] +49ms
+  test:LdHostManager-curl   0: /^(.*wikidata.*)$/s +1ms
+```
