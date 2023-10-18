@@ -42,7 +42,7 @@ function renderRow (site) {
       <td class="commit">${date}<br/>${time}</td>
       <td class="commit">${site.who}</td>
       <td class="commit">${site.hash}</td>
-      <td><a href="${explore}${site.type}/${site.owner}/${site.repo}">explore</a></td>
+      <td><a href="${explore}${site.type}/${site.owner}/${site.repo}/">explore</a></td>
 `;
   return ret;
 }
