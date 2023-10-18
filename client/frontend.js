@@ -30,6 +30,7 @@ async function addElements (addHere) {
 function renderRow (site) {
   const ret = document.createElement('tr');
   const [date, time] = new Date(site.dateTime).toISOString().split('T');
+  const explore = Config.explore || `http://${Config.domain}/${Config.repoDir}/`;
   ret.innerHTML = `
       <td class="repo"><button onclick="invokeDeleteSite(this.parentNode.parentNode)">⌫</button> ${site.type}</td>
       <td class="repo">${site.owner}</td>
@@ -41,7 +42,7 @@ function renderRow (site) {
       <td class="commit">${date}<br/>${time}</td>
       <td class="commit">${site.who}</td>
       <td class="commit">${site.hash}</td>
-      <td><a href="http://${Config.domain}/${Config.repoDir}/${site.type}/${site.owner}/${site.repo}">explore</a></td>
+      <td><a href="${explore}${site.type}/${site.owner}/${site.repo}">explore</a></td>
 `;
   return ret;
 }
