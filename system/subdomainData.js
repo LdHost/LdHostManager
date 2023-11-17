@@ -13,7 +13,7 @@ async function getSubdomainData (debug, root, repoDir, subdomainDir) {
 
     const errors = [];
     let ServerName = '???';
-    const mServerName = text.match(/ServerName\s+([a-z0-9.]+)/sm);
+    const mServerName = text.match(/ServerName\s+([a-z0-9.|-]+)/sm);
     if (mServerName) {
       ServerName = mServerName[1];
     } else {
